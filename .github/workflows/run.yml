@@ -17,11 +17,36 @@ jobs:
           node-version: "lts/*"
           cache: "npm"
 
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
+
       - run: sudo apt-get update
       - run: sudo apt-get install -y build-essential cmake pkg-config libgit2-dev libicu-dev zlib1g-dev libcurl4-openssl-dev libssl-dev ruby-dev
-      - run: sudo gem install github-linguist
+
+      - name: Install GitHub Linguist
+        env:
+          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+        run: |
+          bundle config set --local path vendor/bundle
+          bundle config set --local build.rugged "--use-system-libraries --with-git2-dir=/usr --with-git2-include=/usr/include --with-git2-lib=/usr/lib/x86_64-linux-gnu"
+          bundle install --jobs 4 --retry 3
+          bundle exec github-linguist --version
+
+      - name: Diagnose native gem build failures
+        if: failure()
+        run: |
+          echo "Ruby and Bundler versions:"
+          ruby --version || true
+          gem --version || true
+          bundle --version || true
+          echo "mkmf.log files:"
+          find "$HOME/.bundle" vendor/bundle -type f -name mkmf.log -print -exec tail -n 200 {} \; 2>/dev/null || true
+
       - run: npm ci
-      - run: npm start
+      - run: bundle exec npm start
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GIST_ID: da308b80d3305974e1b6dd5c63af4bbd
