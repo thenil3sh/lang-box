@@ -24,11 +24,12 @@ jobs:
           bundler-cache: false
 
       - run: sudo apt-get update
-      - run: sudo apt-get install -y build-essential cmake pkg-config libicu-dev zlib1g-dev libcurl4-openssl-dev libssl-dev ruby-dev
+      - run: sudo apt-get install -y build-essential cmake pkg-config libgit2-dev libicu-dev zlib1g-dev libcurl4-openssl-dev libssl-dev ruby-dev
 
       - name: Install GitHub Linguist
         run: |
           bundle config set --local path vendor/bundle
+          bundle config set --local build.rugged --use-system-libraries
           bundle install --jobs 4 --retry 3
           bundle exec github-linguist --version
 
