@@ -1,5 +1,3 @@
-# lang-box
-
 Update a pinned GitHub Gist to show your programming language breakdown across all your repositories — automatically, every day.
 
 [![update gist](https://github.com/thenil3sh/lang-box/workflows/update%20gist/badge.svg)](https://github.com/thenil3sh/lang-box/actions)
@@ -40,6 +38,7 @@ Click **Fork** at the top of this page. Everything you need is already in the fo
 
 ### 2. Create a public gist
 
+> [!NOTE]
 > **This step matters.** GitHub only lets you pin **public** gists to your profile. A secret gist cannot be pinned no matter what else you do.
 
 1. Go to [gist.github.com](https://gist.github.com/).
@@ -56,6 +55,7 @@ Click **Fork** at the top of this page. Everything you need is already in the fo
 
 ### 3. Create a GitHub personal access token
 
+> [!NOTE]
 > You need a **Classic** personal access token, not a fine-grained one. The Gists API does not support fine-grained tokens.
 
 1. Go to [github.com/settings/tokens/new](https://github.com/settings/tokens/new).
