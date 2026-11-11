@@ -40,7 +40,7 @@ const { GH_TOKEN, GIST_ID, USERNAME, DAYS } = process.env;
           `/users/${username}/events?per_page=${perPage}&page=${page}`
         );
       } catch (e) {
-        console.log("no more page to load");
+        console.warn(`Events page ${page} fetch ended: ${e.message}`);
         break;
       }
 
