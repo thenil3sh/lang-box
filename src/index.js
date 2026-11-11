@@ -8,7 +8,7 @@ const {
   GIST_ID,
   USERNAME,
   MODE = "all",
-  LANGUAGES = "Rust,Java,Kotlin,Python",
+  LANGUAGES = "",
   MAX_LANGUAGES = "8",
   EXCLUDE_LANGUAGES = "",
   EXCLUDE_REPOS = "",
@@ -19,13 +19,19 @@ const {
 (async () => {
   try {
     if (!GH_TOKEN) {
-      throw new Error("GH_TOKEN is not provided.");
+      throw new Error(
+        "GH_TOKEN is not provided. Please add GH_TOKEN to your repository Secrets (Settings > Secrets and variables > Actions)."
+      );
     }
     if (!GIST_ID) {
-      throw new Error("GIST_ID is not provided.");
+      throw new Error(
+        "GIST_ID is not provided. Please add GIST_ID to your repository Secrets (Settings > Secrets and variables > Actions)."
+      );
     }
     if (!USERNAME) {
-      throw new Error("USERNAME is not provided.");
+      throw new Error(
+        "USERNAME is not provided. Make sure USERNAME is passed to the workflow environment."
+      );
     }
 
     const api = new ApiClient(GH_TOKEN);
@@ -284,7 +290,19 @@ const {
 
     console.log(`Update succeeded with gist filename: "${GIST_TITLE}".`);
   } catch (e) {
-    console.error(e);
+    console.error(`\n❌ Error: ${e.message}\n`);
+    if (e.message && e.message.includes("Bad credentials")) {
+      console.error(
+        "💡 Hint: Your GH_TOKEN appears to be invalid or expired. Please create a Classic Personal Access Token with 'gist' scope (and 'repo' scope for private repos) at https://github.com/settings/tokens and update your GH_TOKEN repository secret.\n"
+      );
+    } else if (e.message && e.message.includes("Not Found")) {
+      console.error(
+        "💡 Hint: The requested Gist or repository could not be found. Please check:\n" +
+          "   1. Your Gist is created as PUBLIC (GitHub profile customization cannot pin secret gists).\n" +
+          "   2. Your GIST_ID matches the ID in your gist URL.\n" +
+          "   3. Your GH_TOKEN has the 'gist' scope enabled.\n"
+      );
+    }
     process.exitCode = 1;
   }
 })();

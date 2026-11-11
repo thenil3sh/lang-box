@@ -1,7 +1,7 @@
 {
   "name": "lang-box",
   "version": "1.0.0",
-  "description": "💻 Update a pinned gist to contain languages of your recent commits in GitHub",
+  "description": "💻 Update a pinned gist to showcase your programming language breakdown across all your GitHub projects",
   "main": "src/index.js",
   "type": "module",
   "scripts": {

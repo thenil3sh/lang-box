@@ -21,8 +21,11 @@ jobs:
       - run: npm start
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GIST_ID: ${{ secrets.GIST_ID || 'c42954bf442a41bf7719c3270da9896e' }}
-          USERNAME: ${{ github.actor }}
-          MODE: "all"
-          LANGUAGES: "Rust,Java,Kotlin,Python"
-          GIST_TITLE: "languages"
+          GIST_ID: ${{ secrets.GIST_ID }}
+          USERNAME: ${{ vars.GH_USERNAME || github.actor }}
+          MODE: ${{ vars.MODE || 'all' }}
+          LANGUAGES: ${{ vars.LANGUAGES }}
+          MAX_LANGUAGES: ${{ vars.MAX_LANGUAGES || '8' }}
+          EXCLUDE_LANGUAGES: ${{ vars.EXCLUDE_LANGUAGES }}
+          EXCLUDE_REPOS: ${{ vars.EXCLUDE_REPOS }}
+          GIST_TITLE: ${{ vars.GIST_TITLE || 'languages' }}
