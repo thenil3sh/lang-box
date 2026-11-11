@@ -28,23 +28,12 @@ jobs:
 
       - name: Install GitHub Linguist
         run: |
-          bundle config set --local path vendor/bundle
-          bundle config set --local build.rugged --use-system-libraries
-          bundle install --jobs 4 --retry 3
-          bundle exec github-linguist --version
-
-      - name: Diagnose native gem build failures
-        if: failure()
-        run: |
-          echo "Ruby and Bundler versions:"
-          ruby --version || true
-          gem --version || true
-          bundle --version || true
-          echo "mkmf.log files:"
-          find "$HOME/.bundle" vendor/bundle -type f -name mkmf.log -print -exec tail -n 200 {} \; 2>/dev/null || true
+          gem install rugged -v 1.7.2 -- --use-system-libraries
+          gem install github-linguist -v 9.7.0
+          github-linguist --version
 
       - run: npm ci
-      - run: bundle exec npm start
+      - run: npm start
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GIST_ID: ${{ secrets.GIST_ID || 'c42954bf442a41bf7719c3270da9896e' }}
