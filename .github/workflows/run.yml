@@ -25,4 +25,4 @@ jobs:
           USERNAME: ${{ github.actor }}
           MODE: "all"
           LANGUAGES: "Rust,Java,Kotlin,Python"
-          GIST_TITLE: "💻 Coding languages"
+          GIST_TITLE: "languages"

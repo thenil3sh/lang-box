@@ -12,7 +12,7 @@ const {
   MAX_LANGUAGES = "8",
   EXCLUDE_LANGUAGES = "",
   EXCLUDE_REPOS = "",
-  GIST_TITLE = "💻 Coding languages",
+  GIST_TITLE = "languages",
   DAYS,
 } = process.env;
 

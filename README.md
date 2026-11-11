@@ -34,7 +34,7 @@ Python        37.9 KB ▎░░░░░░░░░░░░░░░░░░�
 | `MAX_LANGUAGES` | `8` | Number of top programming languages to display when `LANGUAGES` is not specified. |
 | `EXCLUDE_LANGUAGES` | `""` | Comma-separated list of languages to exclude. |
 | `EXCLUDE_REPOS` | `""` | Comma-separated list of repository names to ignore. |
-| `GIST_TITLE` | `💻 Coding languages` | Title/filename of the gist file. |
+| `GIST_TITLE` | `languages` | Title/filename of the gist file. |
 
 ---
 
