@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import fetch from "node-fetch";
 
 export class ApiClient {
   constructor(token) {
@@ -6,7 +6,8 @@ export class ApiClient {
   }
 
   fetch = async (path, method = "GET", body) => {
-    const res = await fetch(`https://api.github.com${path}`, {
+    const url = path.startsWith("http") ? path : `https://api.github.com${path}`;
+    const res = await fetch(url, {
       method,
       headers: {
         Authorization: `bearer ${this.token}`,
@@ -14,27 +15,19 @@ export class ApiClient {
         Accept: "application/vnd.github.v3+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
     const json = await res.json();
     if (!res.ok) {
-      throw new Error(json.message);
+      throw new Error(json.message || `HTTP ${res.status}: ${res.statusText}`);
     }
     return json;
   };
 
-  fetchGq = async (query) => {
-    const res = await fetch("https://api.github.com/graphql", {
-      method: "POST",
-      headers: {
-        Authorization: `bearer ${this.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query }).replace(/\\n/g, ""),
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message);
+  fetchGq = async (query, variables) => {
+    const json = await this.fetch("/graphql", "POST", { query, variables });
+    if (json.errors && json.errors.length > 0) {
+      throw new Error(json.errors.map((e) => e.message).join("; "));
     }
     return json;
   };
