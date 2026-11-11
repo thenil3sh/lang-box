@@ -24,11 +24,17 @@ const createDummyText = (count) => {
 };
 
 export const runLinguist = async (files) => {
-  await run("git checkout --orphan temp && git rm -rf . && rm -rf *");
-  const datas = files.map((d, i) => ({
-    ...d,
-    path: `${i}${path.extname(d.path)}`,
-  }));
+  await run("git branch -D temp 2>/dev/null || true");
+  await run("git checkout --orphan temp && (git rm -rf . 2>/dev/null || true) && rm -rf *");
+  const datas = files.map((d, i) => {
+    const ext = path.extname(d.path);
+    const base = path.basename(d.path, ext);
+    const safeName = base ? `${i}_${base}${ext}` : `${i}${ext}`;
+    return {
+      ...d,
+      path: safeName,
+    };
+  });
   const pathFileMap = datas.reduce((acc, d) => {
     acc[d.path] = d;
     return acc;

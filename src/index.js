@@ -30,45 +30,93 @@ const { GH_TOKEN, GIST_ID, USERNAME, DAYS } = process.env;
     const pages = Math.ceil(maxEvents / perPage);
     const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const commits = [];
-    try {
-      for (let page = 0; page < pages; page++) {
-        // https://docs.github.com/en/developers/webhooks-and-events/github-event-types#pushevent
-        const pushEvents = (
-          await api.fetch(
-            `/users/${username}/events?per_page=${perPage}&page=${page}`
-          )
-        ).filter(
-          ({ type, actor }) => type === "PushEvent" && actor.login === username
-        );
+    const seenShas = new Set();
+    const commitTargets = [];
 
-        const recentPushEvents = pushEvents.filter(
-          ({ created_at }) => new Date(created_at) > fromDate
+    for (let page = 1; page <= pages; page++) {
+      let events = [];
+      try {
+        events = await api.fetch(
+          `/users/${username}/events?per_page=${perPage}&page=${page}`
         );
-        const isEnd = recentPushEvents.length < pushEvents.length;
-        console.log(`${recentPushEvents.length} events fetched.`);
+      } catch (e) {
+        console.log("no more page to load");
+        break;
+      }
 
-        commits.push(
-          ...(
-            await Promise.allSettled(
-              recentPushEvents.flatMap(({ repo, payload }) =>
-                payload.commits
-                  // Ignore duplicated commits
-                  .filter((c) => c.distinct === true)
-                  .map((c) => api.fetch(`/repos/${repo.name}/commits/${c.sha}`))
-              )
-            )
-          )
-            .filter(({ status }) => status === "fulfilled")
-            .map(({ value }) => value)
-        );
+      if (!Array.isArray(events) || events.length === 0) {
+        break;
+      }
 
-        if (isEnd) {
-          break;
+      const pushEvents = events.filter(
+        ({ type, actor }) => type === "PushEvent" && actor.login === username
+      );
+
+      const recentPushEvents = pushEvents.filter(
+        ({ created_at }) => new Date(created_at) > fromDate
+      );
+      const isEnd = recentPushEvents.length < pushEvents.length;
+      console.log(`${recentPushEvents.length} push events fetched on page ${page}.`);
+
+      for (const { repo, payload } of recentPushEvents) {
+        if (!payload) continue;
+
+        // Legacy / webhook format: payload.commits is populated
+        if (Array.isArray(payload.commits) && payload.commits.length > 0) {
+          for (const c of payload.commits) {
+            if (c.distinct !== false && c.sha && !seenShas.has(c.sha)) {
+              seenShas.add(c.sha);
+              commitTargets.push({ repo: repo.name, sha: c.sha });
+            }
+          }
+        } else if (payload.head) {
+          // Modern GitHub Activity API (payload.commits stripped)
+          let resolved = false;
+          if (payload.before && !/^0+$/.test(payload.before)) {
+            try {
+              const comp = await api.fetch(
+                `/repos/${repo.name}/compare/${payload.before}...${payload.head}`
+              );
+              if (Array.isArray(comp.commits)) {
+                for (const c of comp.commits) {
+                  if (c.sha && !seenShas.has(c.sha)) {
+                    seenShas.add(c.sha);
+                    commitTargets.push({ repo: repo.name, sha: c.sha });
+                  }
+                }
+                resolved = true;
+              }
+            } catch (err) {
+              // compare may fail if commits were rebased or force pushed
+            }
+          }
+          if (!resolved && !seenShas.has(payload.head)) {
+            seenShas.add(payload.head);
+            commitTargets.push({ repo: repo.name, sha: payload.head });
+          }
         }
       }
-    } catch (e) {
-      console.log("no more page to load");
+
+      if (isEnd) {
+        break;
+      }
+    }
+
+    console.log(`${commitTargets.length} distinct commits identified.`);
+
+    // Fetch commit details in batches to avoid triggering secondary rate limits
+    const commits = [];
+    const batchSize = 10;
+    for (let i = 0; i < commitTargets.length; i += batchSize) {
+      const batch = commitTargets.slice(i, i + batchSize);
+      const results = await Promise.allSettled(
+        batch.map(({ repo, sha }) => api.fetch(`/repos/${repo}/commits/${sha}`))
+      );
+      for (const res of results) {
+        if (res.status === "fulfilled" && res.value) {
+          commits.push(res.value);
+        }
+      }
     }
 
     console.log(`${commits.length} commits fetched.`);
@@ -77,9 +125,9 @@ const { GH_TOKEN, GIST_ID, USERNAME, DAYS } = process.env;
     // https://docs.github.com/en/rest/reference/repos#compare-two-commits
     const files = commits
       // Ignore merge commits
-      .filter((c) => c.parents.length <= 1)
+      .filter((c) => (c.parents?.length || 0) <= 1)
       .flatMap((c) =>
-        c.files.map(
+        (c.files || []).map(
           ({
             filename,
             additions,
@@ -98,15 +146,22 @@ const { GH_TOKEN, GIST_ID, USERNAME, DAYS } = process.env;
         )
       );
 
-    const langs = await runLinguist(files);
-    console.log(`\n`);
-    langs.forEach((l) =>
-      console.log(
-        `${l.name}: ${l.count} files, ${l.additions + l.deletions} changes`
-      )
-    );
+    let content = "";
+    if (files.length > 0) {
+      const langs = await runLinguist(files);
+      console.log(`\n`);
+      langs.forEach((l) =>
+        console.log(
+          `${l.name}: ${l.count} files, ${l.additions + l.deletions} changes`
+        )
+      );
+      content = createContent(langs);
+    }
 
-    const content = createContent(langs);
+    if (!content || content.trim().length === 0) {
+      content = `No recent commit activity in the last ${days} days.`;
+    }
+
     console.log(`\n`);
     console.log(content);
     console.log(`\n`);
