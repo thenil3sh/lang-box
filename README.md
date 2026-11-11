@@ -14,14 +14,10 @@ By default, this project queries your GitHub repositories via GraphQL and calcul
 ### Preview Example
 
 ```text
-Kotlin         2.0 MB ████████████▍░░░░░░░░░░░  51.9%
-Rust           1.1 MB ██████▉░░░░░░░░░░░░░░░░░  28.8%
-TypeScript   417.4 KB ██▌░░░░░░░░░░░░░░░░░░░░░  10.5%
-Java         144.1 KB ▊░░░░░░░░░░░░░░░░░░░░░░░   3.6%
-JavaScript   105.3 KB ▋░░░░░░░░░░░░░░░░░░░░░░░   2.6%
-Python        37.9 KB ▏░░░░░░░░░░░░░░░░░░░░░░░   0.9%
-Shell         36.1 KB ▏░░░░░░░░░░░░░░░░░░░░░░░   0.9%
-Lua           25.2 KB ▏░░░░░░░░░░░░░░░░░░░░░░░   0.6%
+Rust           1.1 MB ████████░░░░░░░░░░░░░░░░  33.7%
+Java         144.1 KB █░░░░░░░░░░░░░░░░░░░░░░░   4.2%
+Kotlin         2.0 MB ██████████████▌░░░░░░░░░  60.9%
+Python        37.9 KB ▎░░░░░░░░░░░░░░░░░░░░░░░   1.1%
 ```
 
 ---
@@ -34,8 +30,9 @@ Lua           25.2 KB ▏░░░░░░░░░░░░░░░░░░�
 | `GIST_ID` | *Required* | The ID of the public GitHub Gist to update. |
 | `USERNAME` | `${{ github.actor }}` | Your GitHub username. |
 | `MODE` | `all` | `all` aggregates across all repositories; `recent` analyzes recent commits. |
-| `MAX_LANGUAGES` | `8` | Number of top programming languages to display (fits pinned gist card). |
-| `EXCLUDE_LANGUAGES` | `""` | Comma-separated list of languages to exclude (e.g. `GLSL,Swift`). |
+| `LANGUAGES` | `Rust,Java,Kotlin,Python` | Comma-separated list of target languages in explicit display order. If omitted, shows top languages. |
+| `MAX_LANGUAGES` | `8` | Number of top programming languages to display when `LANGUAGES` is not specified. |
+| `EXCLUDE_LANGUAGES` | `""` | Comma-separated list of languages to exclude. |
 | `EXCLUDE_REPOS` | `""` | Comma-separated list of repository names to ignore. |
 | `GIST_TITLE` | `💻 Coding languages` | Title/filename of the gist file. |
 

@@ -24,5 +24,5 @@ jobs:
           GIST_ID: ${{ secrets.GIST_ID || 'c42954bf442a41bf7719c3270da9896e' }}
           USERNAME: ${{ github.actor }}
           MODE: "all"
-          MAX_LANGUAGES: "8"
+          LANGUAGES: "Rust,Java,Kotlin,Python"
           GIST_TITLE: "💻 Coding languages"

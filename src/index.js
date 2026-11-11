@@ -8,6 +8,7 @@ const {
   GIST_ID,
   USERNAME,
   MODE = "all",
+  LANGUAGES = "Rust,Java,Kotlin,Python",
   MAX_LANGUAGES = "8",
   EXCLUDE_LANGUAGES = "",
   EXCLUDE_REPOS = "",
@@ -30,6 +31,11 @@ const {
     const api = new ApiClient(GH_TOKEN);
     const username = USERNAME;
     const maxLangs = Math.max(1, Math.min(25, Number(MAX_LANGUAGES || 8)));
+    const targetLangs = LANGUAGES
+      ? LANGUAGES.split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
     const customExcludedLanguages = EXCLUDE_LANGUAGES.split(",")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -39,7 +45,11 @@ const {
 
     console.log(`Username: ${username}`);
     console.log(`Mode: ${MODE}`);
-    console.log(`Max languages to display: ${maxLangs}`);
+    if (targetLangs.length > 0) {
+      console.log(`Target languages (strict order): ${targetLangs.join(", ")}`);
+    } else {
+      console.log(`Max languages to display: ${maxLangs}`);
+    }
 
     let content = "";
 
@@ -165,22 +175,43 @@ const {
           isProgrammingLanguage(l.name, customExcludedLanguages)
         );
 
-        const totalChanges = filteredLangs.reduce(
-          (acc, l) => acc + (l.additions + l.deletions),
-          0
-        );
+        let selectedRecent = [];
+        if (targetLangs.length > 0) {
+          const langMap = new Map(
+            filteredLangs.map((l) => [l.name.toLowerCase(), l])
+          );
+          const matched = targetLangs
+            .map((t) => langMap.get(t.toLowerCase()))
+            .filter(Boolean);
+          const targetChanges = matched.reduce(
+            (acc, l) => acc + (l.additions + l.deletions),
+            0
+          );
+          selectedRecent = matched.map((l) => ({
+            ...l,
+            percent:
+              targetChanges > 0
+                ? ((l.additions + l.deletions) / targetChanges) * 100
+                : 0,
+          }));
+        } else {
+          const totalChanges = filteredLangs.reduce(
+            (acc, l) => acc + (l.additions + l.deletions),
+            0
+          );
+          selectedRecent = filteredLangs
+            .map((l) => ({
+              ...l,
+              percent:
+                totalChanges > 0
+                  ? ((l.additions + l.deletions) / totalChanges) * 100
+                  : 0,
+            }))
+            .slice(0, maxLangs);
+        }
 
-        const normalizedLangs = filteredLangs.map((l) => ({
-          ...l,
-          percent:
-            totalChanges > 0
-              ? ((l.additions + l.deletions) / totalChanges) * 100
-              : 0,
-        }));
-
-        const topLanguages = normalizedLangs.slice(0, maxLangs);
-        if (topLanguages.length > 0) {
-          content = createContent(topLanguages);
+        if (selectedRecent.length > 0) {
+          content = createContent(selectedRecent);
         }
       }
 
@@ -205,11 +236,35 @@ const {
         console.log(` - ${l.name}: ${l.bytes} bytes (${l.percent.toFixed(1)}%)`)
       );
 
-      const topLanguages = languages.slice(0, maxLangs);
-      if (topLanguages.length > 0) {
-        content = createContent(topLanguages);
+      let selectedLanguages = [];
+      if (targetLangs.length > 0) {
+        const langMap = new Map(
+          languages.map((l) => [l.name.toLowerCase(), l])
+        );
+
+        const matched = targetLangs
+          .map((name) => {
+            const found = langMap.get(name.toLowerCase());
+            return found
+              ? { ...found, name: found.name }
+              : { name, bytes: 0 };
+          })
+          .filter((l) => l.bytes > 0);
+
+        const targetTotalBytes = matched.reduce((acc, l) => acc + l.bytes, 0);
+
+        selectedLanguages = matched.map((l) => ({
+          ...l,
+          percent: targetTotalBytes > 0 ? (l.bytes / targetTotalBytes) * 100 : 0,
+        }));
       } else {
-        content = "No programming languages found across projects.";
+        selectedLanguages = languages.slice(0, maxLangs);
+      }
+
+      if (selectedLanguages.length > 0) {
+        content = createContent(selectedLanguages);
+      } else {
+        content = "No matching programming languages found across projects.";
       }
     }
 
